@@ -37,6 +37,11 @@ export class AuthService {
     private af: AngularFireAuth
   ) {}
 
+  // used in our meals service, this allows us to return user information
+  get user() {
+    return this.af.auth.currentUser;
+  }
+
   // helper function for our auth.guard
   get authState() {
     return this.af.authState;
