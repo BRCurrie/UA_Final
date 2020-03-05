@@ -32,7 +32,12 @@ import {
           No meals, add a new meal to start.
         </div>
         <!-- meals ngFor -->
-        <list-item *ngFor="let meal of meals" [item]="meal"> </list-item>
+        <list-item
+          *ngFor="let meal of meals"
+          [item]="meal"
+          (remove)="removeMeal($event)"
+        >
+        </list-item>
       </div>
       <!-- #loading connects the else statement from *ngIf above to the template -->
       <ng-template #loading>
@@ -57,5 +62,9 @@ export class MealsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subcription.unsubscribe();
+  }
+
+  removeMeal(event: Meal) {
+    this.mealsService.removeMeal(event.$key);
   }
 }

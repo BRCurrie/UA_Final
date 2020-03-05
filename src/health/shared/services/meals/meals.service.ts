@@ -37,4 +37,9 @@ export class MealsService {
   addMeal(meal: Meal) {
     return this.db.list(`meals/${this.uid}`).push(meal);
   }
+
+  // pass through the key to firebase to remove the meal
+  removeMeal(key: string) {
+    return this.db.list(`meals/${this.uid}`).remove(key);
+  }
 }
