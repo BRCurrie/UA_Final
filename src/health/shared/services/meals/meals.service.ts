@@ -5,6 +5,9 @@ import { Store } from "store";
 
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/operator/do";
+import "rxjs/add/operator/map";
+import "rxjs/add/operator/filter";
+import "rxjs/add/observable/of";
 
 import { AuthService } from "../../../../auth/shared/services/auth/auth.service";
 
@@ -32,6 +35,16 @@ export class MealsService {
   // expose user id for string above
   get uid() {
     return this.authService.user.uid;
+  }
+
+  // get the key from the router. We are using this for the meal component for editing meals
+  // lookup id from the store
+  getMeal(key: string) {
+    if (!key) return Observable.of({});
+    return this.store
+      .select<Meal[]>("meals")
+      .filter(Boolean)
+      .map(meals => meals.find((meal: Meal) => meal.$key === key));
   }
 
   addMeal(meal: Meal) {

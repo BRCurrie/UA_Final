@@ -1,10 +1,14 @@
-import { Component } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Router, ActivatedRoute } from "@angular/router";
+
+import { Observable } from "rxjs/Observable";
+import { Subscription } from "rxjs/Subscription";
+import "rxjs/add/operator/switchMap";
 
 import {
   Meal,
   MealsService
 } from "../../../shared/services/meals/meals.service";
-import { Router } from "@angular/router";
 
 @Component({
   selector: "meal",
@@ -14,7 +18,12 @@ import { Router } from "@angular/router";
       <div class="meal__title">
         <h1>
           <img src="img/food.svg" />
-          <span>Create meal</span>
+          <span *ngIf="meal$ | async as meal; else title">
+            {{ meal.name ? "Edit" : "Create" }} meal</span
+          >
+          <ng-template #title>
+            Loading...
+          </ng-template>
         </h1>
       </div>
       <div>
@@ -23,8 +32,27 @@ import { Router } from "@angular/router";
     </div>
   `
 })
-export class MealComponent {
-  constructor(private mealsService: MealsService, private router: Router) {}
+export class MealComponent implements OnInit, OnDestroy {
+  meal$: Observable<Meal>;
+  subsciprion: Subscription;
+
+  constructor(
+    private mealsService: MealsService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit() {
+    // subscribe to meal$ from MealsService
+    this.subsciprion = this.mealsService.meals$.subscribe();
+    this.meal$ = this.route.params.switchMap(param => {
+      return this.mealsService.getMeal(param.id);
+    });
+  }
+
+  ngOnDestroy() {
+    this.subsciprion.unsubscribe();
+  }
 
   async addMeal(event: Meal) {
     // console.log("Meal:", event);
