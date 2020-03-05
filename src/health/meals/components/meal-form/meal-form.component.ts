@@ -2,7 +2,10 @@ import {
   Component,
   ChangeDetectionStrategy,
   Output,
-  EventEmitter
+  EventEmitter,
+  Input,
+  OnChanges,
+  SimpleChanges
 } from "@angular/core";
 import {
   FormArray,
@@ -61,19 +64,64 @@ import { Meal } from "../../../shared/services/meals/meals.service";
         </div>
         <div class="meal-form__submit">
           <div>
-            <button type="button" class="button" (click)="createMeal()">
+            <button
+              type="button"
+              *ngIf="!exists"
+              class="button"
+              (click)="createMeal()"
+            >
               Create meal
             </button>
+            <button
+              type="button"
+              *ngIf="exists"
+              class="button"
+              (click)="updateMeal()"
+            >
+              Save
+            </button>
             <a class="button button--cancel" [routerLink]="['../']"> Cancel</a>
+          </div>
+          <div class="meal-form__delete" *ngIf="exists">
+            <div *ngIf="toggled">
+              <p>Delete item?</p>
+              <button class="confirm" type="button" (click)="removeMeal()">
+                Yes
+              </button>
+              <!-- If user hits no toggle will remove delete item message -->
+              <button class="cancel" type="button" (click)="toggle()">
+                No
+              </button>
+            </div>
+
+            <button
+              class="button button--delete"
+              type="button"
+              (click)="toggle()"
+            >
+              Delete
+            </button>
           </div>
         </div>
       </form>
     </div>
   `
 })
-export class MealFormComponent {
+export class MealFormComponent implements OnChanges {
+  toggled = false;
+  exists = false;
+
+  @Input()
+  meal: Meal;
+
   @Output()
   create = new EventEmitter<Meal>();
+
+  @Output()
+  update = new EventEmitter<Meal>();
+
+  @Output()
+  remove = new EventEmitter<Meal>();
 
   form = this.fb.group({
     // We use the name field to validate the form
@@ -82,6 +130,37 @@ export class MealFormComponent {
   });
 
   constructor(private fb: FormBuilder) {}
+
+  ngOnChanges(changes: SimpleChanges) {
+    // We put this in the ngOnChanges because if the database is modified it will
+    // call the entire cycle and update in the browser.
+    if (this.meal && this.meal.name) {
+      // existing
+      this.exists = true;
+
+      const value = this.meal;
+      //patchValue does not update form array.
+      this.form.patchValue(value);
+      // this only populates the name and first ingredient.
+      // other ingredients need to be added.
+      // remove them first
+      this.emptyIngredients();
+      // populate them properly.
+      if (value.ingredients) {
+        for (const item of value.ingredients) {
+          this.ingredients.push(new FormControl(item));
+        }
+      }
+    }
+  }
+
+  emptyIngredients() {
+    // while we have items in ingredients
+    while (this.ingredients.controls.length) {
+      // remove items at index of 0 until loop is finished
+      this.ingredients.removeAt(0);
+    }
+  }
 
   get required() {
     return (
@@ -109,5 +188,19 @@ export class MealFormComponent {
     if (this.form.valid) {
       this.create.emit(this.form.value);
     }
+  }
+
+  updateMeal() {
+    if (this.form.valid) {
+      this.update.emit(this.form.value);
+    }
+  }
+
+  removeMeal() {
+    this.remove.emit(this.form.value);
+  }
+
+  toggle() {
+    this.toggled = !this.toggled;
   }
 }
